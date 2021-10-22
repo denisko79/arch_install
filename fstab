@@ -1,0 +1,13 @@
+# Static information about the filesystems.
+# See fstab(5) for details.
+
+# <file system> <dir> <type> <options> <dump> <pass>
+# /dev/sda2 LABEL=arch
+UUID=bdc185cd-f1f2-4367-a5d3-344650c540c2	/         	btrfs     	rw,noatime,compress=zstd:2,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/@	0 0
+
+# /dev/sda1
+UUID=C881-1C09      	/boot     	vfat      	rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro	0 2
+
+# /dev/sdb1 LABEL=home 
+UUID=7028e658-5c2e-4bbc-80e4-f3b50f561da7      /home            btrfs           rw,noatime,compress=zstd:2,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/@home       0 0
+ 
