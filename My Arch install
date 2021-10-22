@@ -1,0 +1,86 @@
+My Arch install
+
+У меня два диска на sda boot efi, swap опционально и корневой раздел, на sdb домашний раздел
+Разметка диска :
+cfdisk /dev/sda 
+cfdisk /dev/sdb
+после разметки получаем следующее:
+sda1 - /boot/efi
+sda2 - swap или можно обойтись без него и сделать zram
+sda3 - root
+sdb1 - home
+Форматируем созданные разделы.
+mkfs.vfat -F 32 /dev/sda1 - для /boot/efi
+mkswap -L swap /dev/sda2 - swap. флаг -L позволяет задать имя.
+swapon /dev/sda2 - активация swap
+mkfs.btrfs -L arch /dev/sda3 - для корневого раздела.
+mkfs.btrfs -L home /dev/sdb1 - для домашнего раздела.
+
+Если выбираем btrfs - то лучше всего сделать sub vol
+
+mount /dev/sda3 /mnt - монтируем sda3 в /mnt
+cd /mnt - переходим в /mnt
+btrfs subvolume create /mnt/@ - создаем sub volume
+cd - выходим из /mnt
+umount -R /mnt - размонитируем 
+mount -o noatime,compress=zstd:2,ssd,space_cache=v2,discard=async,subvol=@ /dev/sda3 /mnt - смонтируем наш sub vol, ssd в параметрах указываем - если у нас ssd
+
+mkdir -p /home - создаем каталог для home
+mount /dev/sdb1 /home - смонтируем sdb1 в home
+cd /home - перейдем в home
+btrfs subvolume create /home/@home - создадим sub vol @home
+cd - выйдем из home
+umount -R /home - размонтируем все из home
+mount -o noatime,compress=zstd:2,ssd,space_cache=v2,discard=async,subvol=@home /dev/sdb1 /home - смонтируем наш sub vol
+mkdir -p /mnt/boot - создадим каталог boot 
+mount /dev/sda1 /mnt/boot - смонтируем sda1 в boot
+df -h - проверим чтобы все нужное было смонтировано
+reflector -c Russia -a 5 --sort rate --save /etc/pacman.d/mirrorlist - обновим зеркала в mirrorlist
+pacstrap /mnt base base-devel linux-zen linux-zen-headers linux-firmware btrfs-progs nano sudo - установим базовую систему. я ставлю ядро zen
+genfstab -U /mnt >> /mnt/etc/fstab - генерируем fstab
+cat /mnt/etc/fstab - проверим все ли правильно
+nano /mnt/etc/fstab - если нужно отредактировать
+arch-chroot /mnt - сделаем chroot в свежую систему
+ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime - укажем регион
+timedatectl set-ntp true
+hwclock --systohc --utc 
+date - проверяем дату
+
+nano /etc/hostname - укажем имя ПК - arch-pc
+
+nano /etc/hosts 
+127.0.0.1 localhost 
+::1       localhost 
+127.0.1.1 arch-pc.localdomain arch-pc
+
+nano /etc/vconsole.conf 
+KEYMAP=ru
+FONT=cyr-sun16
+
+nano /etc/locale.conf
+LANG=ru_RU.UTF-8
+
+nano /etc/locale.gen
+локали
+
+locale-gen
+
+passwd - пароль root
+
+nano /etc/mkinitcpio.conf - в модули - btrfs
+
+pacman -S xorg-xinit xorg-server xorg-xrandr xdg-utils xdg-user-dirs links git wget mc file-roller unzip unrar pulseaudio alsa alsa-utils pulseaudio-alsa 
+
+pacman -S grub efibootmgr amd-ucode dhcpcd 
+
+useradd -m -g users -G wheel -s /bin/bash denis
+
+passwd denis
+
+grub-install --efi-directory=/boot
+
+grub-mkconfig -o /boot/grub/grub.cfg
+
+systemctl enable dhcpcd.service
+
+EDITOR=nano visudo 
